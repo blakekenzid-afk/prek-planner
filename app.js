@@ -58,6 +58,12 @@ var IC={
  list:'<path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/>',
  plus:'<path d="M12 5v14M5 12h14"/>',
  check:'<path d="m5 12.5 4.5 4.5L19 7"/>',
+ book:'<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M10 3v7l2.5-1.8L15 10V3"/>',
+ star:'<path d="m12 3.5 2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z"/>',
+ pen:'<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>',
+ search:'<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>',
+ link:'<path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/>',
+ up:'<path d="M12 16V4M7 9l5-5 5 5M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>',
  print:'<path d="M7 9V3h10v6M7 17H4v-7h16v7h-3M7 14h10v7H7z"/>'};
 function ic(n,sw){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="'+(sw||2)+'" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+IC[n]+'</svg>';}
 
@@ -114,16 +120,13 @@ var S=[
   tabs:[['open','To do'],['done','Done']],
   fields:[{k:'item',l:'Item',t:'text',req:1,ph:'Laminate name tags, get glue sticks…'},{k:'kind',l:'Kind',t:'pick',opts:['To-do','Supply to get','Prep','Copies']},{k:'due',l:'Due',t:'date',opt:1},{k:'done',l:'Done',t:'check'}],
   title_:function(f){return f.item;},meta:function(f){return '';},tag:function(f){return f.kind&&f.kind!=='To-do'?f.kind:'';},side:function(f){return f.due?'Due '+fmtD(f.due):'';}},
- {id:'well',ini:'WB',rail:'Well.',tile:'Wellbeing',title:'Wellbeing',over:'Wellbeing',sub:'Three good things and a mood, on the days you can',c:'#C9EBD2',d:'#2F6E3C',icon:'heart',
-  fields:[{k:'date',l:'Date',t:'date',req:1,def:'today'},{k:'mood',l:'Mood',t:'mood'},{k:'g1',l:'Good thing 1',t:'text'},{k:'g2',l:'Good thing 2',t:'text',opt:1},{k:'g3',l:'Good thing 3',t:'text',opt:1},
-   {k:'drain',l:'What drained me',t:'long',opt:1},{k:'no',l:'I will say no to',t:'long',opt:1}],
-  title_:function(f){return fmtLong(f.date);},meta:function(f){return [f.g1,f.g2,f.g3].filter(Boolean).join(' · ');}},
+ {id:'lib',ini:'RL',rail:'Library',tile:'Resource Library',title:'Resource Library',over:'Resource library',sub:'Links, worksheets and printables, all in one place',c:'#EEDDC4',d:'#7A5A2E',icon:'book',custom:1},
  {id:'index',ini:'IX',rail:'Index',tile:'Index',title:'Index',over:'Every page',sub:'Tap any entry to jump straight to that page',c:'#D9CFF2',d:'#5B4B8A',icon:'list'}
 ];
 var SM={};S.forEach(function(s){SM[s.id]=s;});
 var HOME={id:'home',ini:'',rail:'Home',title:'Teacher Dashboard',over:'Home',sub:'Your command center — tap any tile to jump in',c:'#BFE3D6',d:'#2C6B55',icon:'grid'};
-var RAIL=['start','calendar','weekly','schedule','students','iep','behavior','care','centers','comm','meetings','sub','todo','well','index'];
-var TILES=['start','students','centers','iep','calendar','care','comm','meetings','weekly','behavior','schedule','todo','sub','well','index'];
+var RAIL=['start','calendar','weekly','schedule','students','iep','behavior','care','centers','comm','meetings','sub','todo','lib','index'];
+var TILES=['start','students','centers','iep','calendar','care','comm','meetings','weekly','behavior','schedule','todo','sub','lib','index'];
 function rowColor(c){return mix(c,'#ffffff',.22);}
 function mix(a,b,t){var x=parseInt(a.slice(1),16),y=parseInt(b.slice(1),16);function ch(s){return Math.round(((x>>s)&255)*(1-t)+((y>>s)&255)*t);}return '#'+((1<<24)+(ch(16)<<16)+(ch(8)<<8)+ch(0)).toString(16).slice(1);}
 function vars(s){return '--c:'+s.c+';--d:'+s.d+';--row:'+rowColor(s.c)+';';}
@@ -150,7 +153,7 @@ function flush(){if(flushing||!K||locked)return;if(!OUT.length){setSync('ok');re
  p.then(function(){OUT.shift();persist();flushing=false;flush();})
   .catch(function(e){flushing=false;setSync('off');clearTimeout(retryT);retryT=setTimeout(flush,15000);console.warn('save failed',e);});}
 function load(){if(!K)return Promise.resolve();if(loadingP)return loadingP;setSync('load');
- loadingP=api('list',[COL]).then(function(r){var n={};(r||[]).forEach(function(d){if(mine(d))n[d.id]=d;});DB=n;OUT.forEach(applyOp);persist();loaded=true;locked=false;loadingP=null;
+ loadingP=api('list',[COL]).then(function(r){var n={};(r||[]).forEach(function(d){if(mine(d))n[d.id]=d;});DB=n;OUT.forEach(applyOp);persist();loaded=true;locked=false;loadingP=null;setTimeout(libDrain,1500);
   if(!$('#sheet.on'))render();setSync(OUT.length?'busy':'ok');flush();})
  .catch(function(e){loadingP=null;setSync('off');if(e!=='locked')toast('Showing your saved copy — I’ll sync when I can');});return loadingP;}
 window.addEventListener('online',flush);
@@ -180,13 +183,14 @@ function render(){var r=route(),pg=$('#page');
  var s=r.sec==='home'?HOME:SM[r.sec];if(!s){s=HOME;r.sec='home';}
  rail(r.sec);pg.setAttribute('style',vars(s));pg.className=r.sec==='home'?'':'sec';
  var keepFocus=document.activeElement&&document.activeElement.closest&&document.activeElement.closest('.note');
+ if(r.sec==='lib'&&document.activeElement&&document.activeElement.id==='libq'&&$('#liblist')){libRefreshList();return;}
  if(r.sec==='home'){if(keepFocus)return;pg.innerHTML=dashboard();return;}
  if(r.sec==='index'){pg.innerHTML=banner(s)+'<section class="card">'+indexView()+'</section>';return;}
  pg.innerHTML=banner(s,subLine(s,r))+'<section class="card">'+secView(s,r)+'</section>';
- document.title=s.title+' · Pre-K Planner';}
+ document.title=s.title+' · Pre-K Planner';if(s.id==='lib')setTimeout(libThumbs,0);}
 
 function subLine(s,r){if(s.id==='start')return '5 pages in this section — tap any to open it';
- var n=docs(s.id).length;if(s.id==='sub')return s.sub;if(!n)return s.sub;return s.sub+' · '+n+(n===1?' entry':' entries');}
+ var n=docs(s.id).length;if(s.id==='sub')return s.sub;if(!n)return s.sub;if(s.id==='lib')return s.sub+' · '+n+' saved';return s.sub+' · '+n+(n===1?' entry':' entries');}
 
 function lockView(){return banner(HOME,'Open your install link once to unlock this device','')+
  '<section class="card"><div class="lock"><h1>Welcome, Kenzi 🍎</h1><p>This planner is private. Open the install link Hark sent you once on this device, or type your planner code below.</p>'+
@@ -202,6 +206,7 @@ function tileCount(id){var a;switch(id){
  case 'comm':a=docs('comm').filter(function(d){return d.f.follow&&!d.f.done;}).length;return a?a+' to follow up':'';
  case 'care':a=docs('care').filter(function(d){return d.f.date===today();}).length;return a?a+' today':'';
  case 'behavior':a=docs('behavior').filter(function(d){return d.f.date===today();}).length;return a?a+' today':'';
+ case 'lib':a=docs('lib').length;return a?a+' saved':'';
  case 'centers':a=docs('centers').filter(function(d){return d.f.weekOf===monday()&&!d.f.prepped;}).length;return a?a+' to prep':'';
  }return '';}
 function dashboard(){var D=dashDoc().f||{},t3=D.top||[{},{},{}];
@@ -238,7 +243,7 @@ function pagesOf(s){var P=[];function p(l,h){P.push([l,h]);}
  case 'behavior':p('ABC log','behavior');p('Add a behavior entry','behavior/new');break;
  case 'centers':p('All centers','centers');p('Plan a center','centers/new');break;
  case 'meetings':p('All meetings','meetings');p('Add meeting notes','meetings/new');break;
- case 'well':p('My check-ins','well');p('Check in today','well/new');break;
+ case 'lib':p('All resources','lib');p('Favorites first','lib/fav');p('Add a link','lib/new');p('Upload a file','lib/upload');break;
  }return P;}
 function byName(a,b){return String(a.f.name||'').localeCompare(String(b.f.name||''));}
 function indexView(){var h='<div class="idx">';RAIL.filter(function(id){return id!=='index';}).forEach(function(id){var s=SM[id];
@@ -258,8 +263,8 @@ function childChips(s){var st=students();if(!st.length)return '';var cur=UI['cf_
 function byDateDesc(a,b){var x=(b.f.date||b.f.weekOf||'')+(b.f.time||''),y=(a.f.date||a.f.weekOf||'')+(a.f.time||'');return x<y?-1:x>y?1:(b.created||0)-(a.created||0);}
 
 function secView(s,r){var sub=r.sub;
- if(sub==='new'||sub==='quick'||sub==='e'||sub==='print'){var act=sub,arg=r.arg;setTimeout(function(){
-   if(act==='new')openForm(s.id,null,{});else if(act==='quick')openForm(s.id,null,{type:arg});else if(act==='e')openForm(s.id,arg);else if(act==='print')printSub();
+ if(sub==='new'||sub==='quick'||sub==='e'||sub==='print'||sub==='upload'||sub==='fav'){var act=sub,arg=r.arg;setTimeout(function(){
+   if(act==='new')openForm(s.id,null,{});else if(act==='quick')openForm(s.id,null,{type:arg});else if(act==='e')openForm(s.id,arg);else if(act==='print')printSub();else if(act==='upload')openForm(s.id,null,{type:'file'});else if(act==='fav'){UI.libFav=true;UI.libCat='';saveUI();render();}
    try{history.replaceState(null,'','#'+s.id);}catch(e){}},30);sub='';}
  switch(s.id){
  case 'start':return startView(r);
@@ -269,7 +274,7 @@ function secView(s,r){var sub=r.sub;
  case 'students':return studentsView(s);
  case 'sub':return subView(s);
  case 'todo':return todoView(s,sub||'open');
- case 'well':return listView(s,docs(s.id).sort(byDateDesc),'Add a check-in',{mood:1},'No check-ins yet','Tap “Check in” on any day — a mood and one good thing is plenty.');
+ case 'lib':return libView(s);
  case 'centers':return centersView(s);
  case 'comm':return commView(s,sub||'all');
  default:return listView(s,filt(s,docs(s.id)).sort(byDateDesc),null,null,'Nothing here yet','Tap “Add” to make your first entry.');}}
@@ -360,7 +365,7 @@ function commView(s,tab){if(tab!=='all'&&tab!=='open')tab='all';var a=filt(s,doc
 /* ---------- forms ---------- */
 var FORM=null;
 function defVal(fl){if(fl.def==='today')return today();if(fl.def==='now')return nowTime();if(fl.t==='kids'||fl.t==='days')return [];if(fl.t==='check')return false;return '';}
-function openForm(secId,id,preset){var s=SM[secId];if(!s||!s.fields)return;var doc=id?(DB[id]||(secId==='sub'?subTopics().filter(function(d){return d.id===id;})[0]:null)):null;
+function openForm(secId,id,preset){if(secId==='lib')return libForm(id,preset||{});var s=SM[secId];if(!s||!s.fields)return;var doc=id?(DB[id]||(secId==='sub'?subTopics().filter(function(d){return d.id===id;})[0]:null)):null;
  if(id&&!doc){toast('That entry was removed');return;}
  var f={};s.fields.forEach(function(fl){f[fl.k]=doc&&doc.f[fl.k]!=null?doc.f[fl.k]:defVal(fl);});
  if(!doc){if(s.id==='weekly'&&!preset.weekOf)f.weekOf=UI.wk||monday();if(s.id==='weekly'&&!preset.day){var di=(new Date().getDay()+6)%7;f.day=DAYS5[Math.min(di,4)];}
@@ -393,7 +398,7 @@ function fieldHtml(fl,f){var v=f[fl.k],lab='<span>'+esc(fl.l)+(fl.opt?' <em>(opt
  return h;}
 function readForm(){var s=FORM.s,f=FORM.f,sh=$('#sheet');s.fields.forEach(function(fl){var el=$('#f_'+fl.k,sh);
  if(el){var v=el.value;if(el.getAttribute('data-kidtext')==='kids')v=v.split(',').map(function(x){return x.trim();}).filter(Boolean);else if(typeof v==='string'&&fl.t!=='long')v=v.trim();f[fl.k]=v;}});return f;}
-function saveForm(){var s=FORM.s,f=readForm(),bad=[];$$('.fld.err',$('#sheet')).forEach(function(e){e.classList.remove('err');});
+function saveForm(){if(FORM&&FORM.lib){if(!FORM.view)libSave();return;}var s=FORM.s,f=readForm(),bad=[];$$('.fld.err',$('#sheet')).forEach(function(e){e.classList.remove('err');});
  s.fields.forEach(function(fl){var v=f[fl.k];if(fl.req&&(v==null||v===''||(Array.isArray(v)&&!v.length)))bad.push(fl);});
  if(bad.length){bad.forEach(function(fl){var e=$('[data-f="'+fl.k+'"]',$('#sheet'));if(e)e.classList.add('err');});toast('Please fill in: '+bad.map(function(x){return x.l;}).join(', '));return;}
  if(s.id==='weekly'||s.id==='centers')f.weekOf=monday(f.weekOf);
@@ -404,12 +409,191 @@ function saveForm(){var s=FORM.s,f=readForm(),bad=[];$$('.fld.err',$('#sheet')).
  var isNew=!FORM.doc||FORM.doc.builtin;var renamed=s.id==='students'&&FORM.doc&&FORM.doc.f.name!==f.name?[FORM.doc.f.name,f.name]:null;
  closeSheet();save(doc);if(renamed)renameKid(renamed[0],renamed[1]);toast(isNew?'Saved ✓':'Updated ✓');}
 function renameKid(a,b){['iep','behavior','care','comm','schedule'].forEach(function(k){docs(k).forEach(function(d){var ch=false;if(d.f.child===a){d.f.child=b;ch=true;}if(d.f.kids&&d.f.kids.indexOf(a)>=0){d.f.kids=d.f.kids.map(function(x){return x===a?b:x;});ch=true;}if(ch)save(d,true);});});render();}
-function deleteForm(){var d=FORM.doc,s=FORM.s;if(!d)return;var what=s.id==='students'?d.f.name:s.id==='sub'?d.f.topic:'this entry';
+function deleteForm(){if(FORM&&FORM.lib)return libDelete();var d=FORM.doc,s=FORM.s;if(!d)return;var what=s.id==='students'?d.f.name:s.id==='sub'?d.f.topic:'this entry';
  if(!confirm('Delete '+what+'?'))return;closeSheet();
  if(s.id==='sub'&&/^prek_sub_t\d+$/.test(d.id)){var old=DB[d.id]?JSON.parse(JSON.stringify(DB[d.id])):null;save({id:d.id,sec:'sub',hidden:true,f:{topic:d.f.topic,details:''}});
   toast('Deleted',function(){if(old)save(old);else removeDoc(d.id);});return;}
  var copy=JSON.parse(JSON.stringify(d));removeDoc(d.id);toast('Deleted',function(){save(copy);});}
 function closeSheet(nore){var sh=$('#sheet');if(!sh.classList.contains('on'))return;sh.classList.remove('on');sh.setAttribute('aria-hidden','true');$('#shade').classList.remove('on');document.body.style.overflow='';document.body.classList.remove('sheeton');FORM=null;if(document.activeElement)document.activeElement.blur();}
+
+/* ---------- Resource Library ----------
+   Links and files. Each entry is a prek_lib_… doc in "lists" holding only small details.
+   A file's bytes live on the server in the separate "prekbin" store (prekPutPart / prekGetPart /
+   prekGetThumbs / prekDelFile), keyed by f.file.key, so the life planner never downloads them. */
+var LIB_CATS=['Worksheets','Activities','Songs / Videos','Behavior','Sensory','Printables','Teacher Tips','Other'];
+var LIB_MAX=5*1024*1024, LIB_IMG_IN=25*1024*1024, LIB_PART=800000, LIB_DELAY=9000;
+var LIB={thumbs:{},urls:{},busy:false};
+function libDocs(){return docs('lib');}
+function libCats(){var used={};libDocs().forEach(function(d){if(d.f.cat)used[d.f.cat]=1;});var out=LIB_CATS.slice();Object.keys(used).sort().forEach(function(c){if(out.indexOf(c)<0)out.splice(out.length-1,0,c);});return out;}
+function libHost(u){try{return new URL(u).hostname.replace(/^www\./,'');}catch(e){return '';}}
+function libNormUrl(u){u=String(u||'').trim();if(!u)return '';if(!/^[a-z][a-z0-9+.-]*:/i.test(u))u='https://'+u;try{var x=new URL(u);if(!/^https?:$/.test(x.protocol))return '';if(!/\./.test(x.hostname)&&x.hostname!=='localhost')return '';return x.href;}catch(e){return '';}}
+function libSize(n){if(!n&&n!==0)return '';return n>=1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB';}
+function libIsPdf(f){return f&&f.file&&/pdf/i.test(f.file.mime||'');}
+function libMatch(d,q){if(!q)return true;var f=d.f||{},h=[f.title,f.url,f.notes,f.cat,(f.tags||[]).join(' '),f.file&&f.file.name].join(' ').toLowerCase();
+ return q.toLowerCase().split(/\s+/).filter(Boolean).every(function(w){return h.indexOf(w)>=0;});}
+function libList(){var q=UI.libQ||'',cat=UI.libCat||'',a=libDocs().filter(function(d){return (!cat||d.f.cat===cat)&&libMatch(d,q);});
+ a.sort(function(x,y){if(UI.libFav&&!!x.f.fav!==!!y.f.fav)return x.f.fav?-1:1;return (y.created||0)-(x.created||0);});return a;}
+function libView(s){var all=libDocs(),cats=libCats().filter(function(c){return all.some(function(d){return d.f.cat===c;});});
+ if(UI.libCat&&cats.indexOf(UI.libCat)<0)UI.libCat='';
+ var h='<div class="bar">'+addBtn(s,'Add a link',{type:'link'})+'<button class="ghost" data-new="lib" data-preset="'+esc(JSON.stringify({type:'file'}))+'">'+ic('up')+'Upload a file</button><span class="grow"></span>'+
+  '<button class="ghost fav'+(UI.libFav?' on':'')+'" data-libfav="1" aria-pressed="'+(UI.libFav?'true':'false')+'">'+ic('star')+'Favorites first</button></div>';
+ if(!all.length)return h+emptyHtml('Your library is empty','Save websites you love and upload worksheets (PDF or photo) so they are always one tap away.');
+ h+='<label class="srch">'+ic('search')+'<input type="search" id="libq" placeholder="Search titles, tags, notes…" value="'+esc(UI.libQ||'')+'" autocomplete="off" aria-label="Search the library"></label>';
+ h+='<div class="chips"><button class="chip'+(!UI.libCat?' on':'')+'" data-libcat="">All · '+all.length+'</button>'+cats.map(function(c){var n=all.filter(function(d){return d.f.cat===c;}).length;return '<button class="chip'+(UI.libCat===c?' on':'')+'" data-libcat="'+esc(c)+'">'+esc(c)+' · '+n+'</button>';}).join('')+'</div>';
+ return h+'<div id="liblist">'+libRows()+'</div>';}
+function libRows(){var a=libList();if(!a.length)return emptyHtml('Nothing matches','Try another word or tap “All”.');
+ return a.map(function(d){var f=d.f||{},isF=f.type==='file',host=isF?'':libHost(f.url),lead;
+  if(isF){var key=f.file&&f.file.key;lead=libIsPdf(f)?'<span class="lth pdf"><span>PDF</span></span>':'<span class="lth img" data-thumb="'+esc(key||'')+'">'+(LIB.thumbs[key]?'<img alt="" src="'+LIB.thumbs[key]+'">':'<span>IMG</span>')+'</span>';}
+  else lead='<span class="lth fav"><span>'+esc((host||f.title||'?').charAt(0).toUpperCase())+'</span>'+(host?'<img alt="" src="https://www.google.com/s2/favicons?domain='+encodeURIComponent(host)+'&amp;sz=64" onerror="this.remove()">':'')+'</span>';
+  var meta=[f.cat,isF?((libIsPdf(f)?'PDF':'Picture')+(f.file&&f.file.size?' · '+libSize(f.file.size):'')):host].filter(Boolean).join(' · ');
+  var tags=(f.tags||[]).map(function(t){return '<span class="tag">'+esc(t)+'</span>';}).join('');
+  return '<div class="row lrow" data-libopen="'+d.id+'" role="button" tabindex="0" title="'+(isF?'Open file':'Open website in a new tab')+'">'+lead+'<span class="rt"><b>'+esc(f.title||host||'(untitled)')+tags+'</b><small>'+esc(meta)+'</small>'+(f.notes?'<small class="nt">'+esc(first(f.notes,110))+'</small>':'')+'</span>'+
+   '<button class="star'+(f.fav?' on':'')+'" data-libstar="'+d.id+'" aria-label="'+(f.fav?'Remove from favorites':'Add to favorites')+'">'+ic('star')+'</button>'+
+   '<button class="ied" data-libedit="'+d.id+'" aria-label="Edit">'+ic('pen')+'</button></div>';}).join('');}
+function libRefreshList(){var el=$('#liblist');if(el){el.innerHTML=libRows();libThumbs();}}
+
+/* thumbnails: memory, then this device's IndexedDB, then one server call for the rest */
+var _ldb=null;
+function lidb(){if(_ldb)return _ldb;_ldb=new Promise(function(res,rej){try{var r=indexedDB.open('prek-files',1);r.onupgradeneeded=function(){r.result.createObjectStore('f');};r.onsuccess=function(){res(r.result);};r.onerror=function(){rej(r.error);};}catch(e){rej(e);}});return _ldb;}
+function lget(k){return lidb().then(function(db){return new Promise(function(res){try{var q=db.transaction('f').objectStore('f').get(k);q.onsuccess=function(){res(q.result||null);};q.onerror=function(){res(null);};}catch(e){res(null);}});}).catch(function(){return null;});}
+function lput(k,v){return lidb().then(function(db){try{db.transaction('f','readwrite').objectStore('f').put(v,k);}catch(e){}}).catch(function(){});}
+function ldel(k){return lidb().then(function(db){try{db.transaction('f','readwrite').objectStore('f').delete(k);}catch(e){}}).catch(function(){});}
+var _thBusy=false,_thTried={};
+function libThumbs(){var need=$$('[data-thumb]').map(function(e){return e.getAttribute('data-thumb');}).filter(function(k){return k&&!LIB.thumbs[k];});
+ if(!need.length||_thBusy)return;_thBusy=true;
+ Promise.all(need.map(function(k){return lget('th:'+k).then(function(v){if(v)LIB.thumbs[k]=v;return v?null:k;});})).then(function(miss){
+  miss=miss.filter(function(k){return k&&!_thTried[k];});if(!miss.length||!K)return;miss.forEach(function(k){_thTried[k]=1;});
+  return api('prekGetThumbs',[miss.slice(0,40)]).then(function(r){for(var k in (r||{}))if(r[k]){LIB.thumbs[k]=r[k];lput('th:'+k,r[k]);}});
+ }).catch(function(){}).then(function(){_thBusy=false;$$('[data-thumb]').forEach(function(e){var k=e.getAttribute('data-thumb');if(LIB.thumbs[k]&&!e.querySelector('img'))e.innerHTML='<img alt="" src="'+LIB.thumbs[k]+'">';});});}
+
+/* ---------- the add / edit sheet ---------- */
+function libForm(id,preset){var doc=id?DB[id]:null;if(id&&!doc){toast('That entry was removed');return;}
+ var s=SM.lib,f=doc?JSON.parse(JSON.stringify(doc.f)):{type:preset.type==='file'?'file':'link',title:'',url:'',cat:'',tags:[],notes:'',fav:false};
+ if(!doc&&UI.libCat&&!preset.cat)f.cat=UI.libCat;
+ FORM={s:s,lib:1,id:doc?doc.id:null,doc:doc,f:f,file:null};
+ var cats=libCats();if(f.cat&&cats.indexOf(f.cat)<0)cats.push(f.cat);
+ var title=doc?'Edit · '+(f.type==='file'?'File':'Link'):(f.type==='file'?'Upload a file':'Add a link');
+ var h='<div class="sh-h" style="'+vars(s)+'"><div class="badge">'+s.ini+'</div><h2 id="libttl">'+esc(title)+'</h2><button class="x" data-act="close" aria-label="Close">×</button></div><div class="sh-b" style="'+vars(s)+'">';
+ if(!doc)h+='<div class="tabs ltype"><button type="button" class="'+(f.type==='link'?'on':'')+'" data-libtype="link">'+ic('link')+'Website link</button><button type="button" class="'+(f.type==='file'?'on':'')+'" data-libtype="file">'+ic('up')+'Worksheet / file</button></div>';
+ h+='<div class="lgrp lg-link"'+(f.type==='link'?'':' hidden')+'><label class="fld" data-f="url"><span>Website address</span><input type="url" id="l_url" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="https://…" value="'+esc(f.url)+'"></label></div>';
+ h+='<div class="lgrp lg-file"'+(f.type==='file'?'':' hidden')+'><div class="fld" data-f="file"><span>File <em>(PDF or picture, up to 5 MB)</em></span>'+
+  (doc&&f.file?'<div class="curf">'+(libIsPdf(f)?'<span class="lth pdf"><span>PDF</span></span>':'<span class="lth img" data-thumb="'+esc(f.file.key)+'">'+(LIB.thumbs[f.file.key]?'<img alt="" src="'+LIB.thumbs[f.file.key]+'">':'<span>IMG</span>')+'</span>')+'<span class="cfn"><b>'+esc(f.file.name||'file')+'</b><small>'+esc(libSize(f.file.size))+'</small></span></div>':'')+
+  '<label class="pickf"><input type="file" id="l_file" accept="application/pdf,.pdf,image/*"><span class="pfb">'+ic('up')+(doc?'Replace file':'Choose a file')+'</span><span class="pfn" id="l_fname">'+(doc?'':'From Photos, Files, or your Mac')+'</span></label>'+
+  '<div class="hint">Bigger than 5 MB? Save it in Google Drive, tap Share › Copy link, and add it as a website link instead.</div></div></div>';
+ h+='<label class="fld" data-f="title"><span>Title</span><input type="text" id="l_title" value="'+esc(f.title)+'" placeholder="'+(f.type==='file'?'Turkey counting worksheet':'Pete the Cat songs')+'"></label>';
+ h+='<div class="fld" data-f="cat"><span>Category</span><div class="pick" data-pick="cat">'+cats.map(function(c){return '<button type="button" class="'+(c===f.cat?'on':'')+'" data-val="'+esc(c)+'">'+esc(c)+'</button>';}).join('')+'<button type="button" class="other" data-libnewcat="1">+ New category</button></div>'+
+  '<input type="text" id="l_newcat" placeholder="New category name" hidden style="margin-top:6px"></div>';
+ h+='<label class="fld" data-f="tags"><span>Subject / skill tags <em>(optional, separate with commas)</em></span><input type="text" id="l_tags" value="'+esc((f.tags||[]).join(', '))+'" placeholder="letters, counting, fine motor"></label>';
+ h+='<label class="fld" data-f="notes"><span>Notes <em>(optional)</em></span><textarea id="l_notes" rows="3" placeholder="How I use it, which kids it helps…">'+esc(f.notes)+'</textarea></label>';
+ h+='<div class="fld"><button type="button" class="cbox" data-cbox="fav"><span class="ck'+(f.fav?' on':'')+'">'+ic('check',3)+'</span>Favorite ★</button></div>';
+ h+='<div class="upl" id="l_upl" hidden><div class="upl-m">Uploading…</div><div class="upl-bar"><i></i></div></div>';
+ h+='</div><div class="sh-f" style="'+vars(s)+'">'+(doc?'<button class="btn del" data-act="delete">Delete</button>':'')+'<span class="grow"></span><button class="btn" data-act="close">Cancel</button><button class="btn pri" data-act="save" id="l_save">Save</button></div>';
+ var sh=$('#sheet');sh.setAttribute('style',vars(s));sh.innerHTML=h;sh.classList.add('on');sh.setAttribute('aria-hidden','false');$('#shade').classList.add('on');document.body.style.overflow='hidden';document.body.classList.add('sheeton');
+ var fi=$('#l_file');if(fi)fi.onchange=function(){var x=fi.files&&fi.files[0];FORM.file=x||null;$('#l_fname').textContent=x?(x.name+' · '+libSize(x.size)):'';
+  if(x){var tt=$('#l_title');if(!tt.value.trim())tt.value=String(x.name||'').replace(/\.[a-z0-9]{2,5}$/i,'').replace(/[_-]+/g,' ').trim().slice(0,80);
+   if(!libOkType(x))toast('Pick a PDF or a picture (JPG, PNG or an iPhone photo)');else if(!libIsImg(x)&&x.size>LIB_MAX)toast(libTooBig(x.size));}};
+ if(doc)setTimeout(libThumbs,0);
+ if(!doc&&window.innerWidth>700)setTimeout(function(){var e=$(f.type==='file'?'#l_title':'#l_url');if(e)e.focus();},60);}
+function libSetType(t){if(!FORM||!FORM.lib||FORM.doc)return;FORM.f.type=t;$$('.ltype button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-libtype')===t);});
+ $('.lg-link').hidden=t!=='link';$('.lg-file').hidden=t!=='file';$('#libttl').textContent=t==='file'?'Upload a file':'Add a link';$('#l_title').placeholder=t==='file'?'Turkey counting worksheet':'Pete the Cat songs';}
+function libIsImg(x){return /^image\//i.test(x.type||'')||/\.(jpe?g|png|gif|webp|heic|heif)$/i.test(x.name||'');}
+function libIsPdfFile(x){return /pdf/i.test(x.type||'')||/\.pdf$/i.test(x.name||'');}
+function libOkType(x){return libIsImg(x)||libIsPdfFile(x);}
+function libTooBig(n){return 'That file is '+libSize(n)+'. Files can be up to 5 MB here. For bigger ones, save it in Google Drive, copy the share link, and add it as a website link.';}
+function libErr(m){var u=$('#l_upl');if(u){u.hidden=false;u.className='upl bad';u.innerHTML='<div class="upl-m"></div>';u.querySelector('.upl-m').textContent=m;}toast(m.length>90?'Couldn’t save that file':m);}
+function libProg(t,p){var u=$('#l_upl');if(!u)return;u.hidden=false;u.className='upl';if(!u.querySelector('i'))u.innerHTML='<div class="upl-m"></div><div class="upl-bar"><i></i></div>';u.querySelector('.upl-m').textContent=t;u.querySelector('i').style.width=p+'%';}
+function libReadForm(){var f=FORM.f;f.title=$('#l_title').value.trim();f.url=$('#l_url')?$('#l_url').value.trim():f.url;
+ var nc=$('#l_newcat');if(nc&&!nc.hidden&&nc.value.trim())f.cat=nc.value.trim().slice(0,40);
+ f.tags=$('#l_tags').value.split(',').map(function(x){return x.trim();}).filter(Boolean).slice(0,12);f.notes=$('#l_notes').value;return f;}
+function libSave(){if(LIB.busy)return;var f=libReadForm(),doc=FORM.doc,bad=null;$$('.fld.err',$('#sheet')).forEach(function(e){e.classList.remove('err');});
+ if(f.type==='link'){var u=libNormUrl(f.url);if(!u){bad=['url','Please add the website address (like abcya.com)'];}else{f.url=u;if(!f.title)f.title=libHost(u);}}
+ else{if(!doc&&!FORM.file)bad=['file','Please choose a file to upload'];
+  else if(FORM.file&&!libOkType(FORM.file))bad=['file','Pick a PDF or a picture (JPG, PNG or an iPhone photo)'];
+  else if(FORM.file&&!libIsImg(FORM.file)&&FORM.file.size>LIB_MAX)bad=['file',libTooBig(FORM.file.size)];
+  else if(FORM.file&&libIsImg(FORM.file)&&FORM.file.size>LIB_IMG_IN)bad=['file',libTooBig(FORM.file.size)];
+  if(!bad&&!f.title)f.title=FORM.file?String(FORM.file.name||'File').replace(/\.[a-z0-9]{2,5}$/i,''):'File';}
+ if(bad){var e=$('[data-f="'+bad[0]+'"]',$('#sheet'));if(e)e.classList.add('err');toast(bad[1]);return;}
+ if(f.type==='link'){delete f.file;libCommit(f);return;}
+ if(!FORM.file){libCommit(f);return;}
+ if(!navigator.onLine){toast('Uploading needs the internet. Try again when you’re online.');return;}
+ var form=FORM,btn=$('#l_save');LIB.busy=true;if(btn){btn.disabled=true;btn.textContent='Uploading…';}
+ libUpload(form.file,libProg).then(function(meta){LIB.busy=false;if(FORM!==form){libQueueDel(meta.key,meta.parts);return;}var old=form.doc&&form.doc.f.file;f.file=meta;libCommit(f);if(old&&old.key)libQueueDel(old.key,old.parts);})
+ .catch(function(e){LIB.busy=false;if(btn){btn.disabled=false;btn.textContent='Save';}libErr(typeof e==='string'?e:'Couldn’t upload right now. Check your internet and try again.');console.warn('upload',e);});}
+function libCommit(f){var doc=FORM.doc?JSON.parse(JSON.stringify(FORM.doc)):{id:'prek_lib_'+uid(),sec:'lib'};var isNew=!FORM.doc;doc.f=f;closeSheet();save(doc);toast(isNew?'Saved to your library ✓':'Updated ✓');}
+
+/* file → (shrink big photos) → base64 → pieces on the server */
+function libB64(blob){return new Promise(function(res,rej){var r=new FileReader();r.onload=function(){var s=String(r.result||''),i=s.indexOf(',');res(i>=0?s.slice(i+1):s);};r.onerror=function(){rej('read');};r.readAsDataURL(blob);});}
+function libDecode(file){return new Promise(function(res,rej){var u=URL.createObjectURL(file),im=new Image();im.onload=function(){res(im);};im.onerror=function(){URL.revokeObjectURL(u);rej('decode');};im.src=u;});}
+function libCanvas(im,max,q,mime){var w=im.naturalWidth,h=im.naturalHeight,sc=Math.min(1,max/Math.max(w,h)),cv=document.createElement('canvas');cv.width=Math.max(1,Math.round(w*sc));cv.height=Math.max(1,Math.round(h*sc));
+ var cx=cv.getContext('2d');cx.fillStyle='#fff';cx.fillRect(0,0,cv.width,cv.height);cx.drawImage(im,0,0,cv.width,cv.height);
+ return new Promise(function(res){cv.toBlob(function(b){res(b);},mime||'image/jpeg',q);});}
+function libPrepare(file){if(!libIsImg(file))return Promise.resolve({blob:file,mime:'application/pdf',thumb:''});
+ return libDecode(file).then(function(im){var big=file.size>1.5*1048576||Math.max(im.naturalWidth,im.naturalHeight)>2400||!/^image\/(jpe?g|png|gif|webp)$/i.test(file.type||'');
+   var main=big?libCanvas(im,2400,.85).then(function(b){return b&&b.size<=LIB_MAX?b:libCanvas(im,1800,.75);}):Promise.resolve(file);
+   return Promise.all([main,libCanvas(im,240,.72)]).then(function(r){if(!r[0])throw 'decode';var th=r[1];
+    return (th?new Promise(function(res){var fr=new FileReader();fr.onload=function(){res(String(fr.result||''));};fr.onerror=function(){res('');};fr.readAsDataURL(th);}):Promise.resolve('')).then(function(td){
+     return {blob:r[0],mime:big?'image/jpeg':(file.type||'image/jpeg'),thumb:td,shrunk:big};});});},
+  function(){if(/hei[cf]/i.test(file.type||'')||/\.(heic|heif)$/i.test(file.name||''))throw 'This browser can’t open that iPhone (HEIC) photo. On your iPhone go to Settings › Camera › Formats › Most Compatible, or pick a screenshot, then try again.';
+   throw 'Hmm, I couldn’t open that picture. Try a JPG or PNG.';});}
+function libPut(key,i,data,tries){return api('prekPutPart',[key,i,data]).catch(function(e){if((tries||0)<2)return new Promise(function(r){setTimeout(r,1200);}).then(function(){return libPut(key,i,data,(tries||0)+1);});throw e;});}
+function libUpload(file,step){step('Getting your file ready…',5);var key='prek_libf_'+uid();
+ return libPrepare(file).then(function(p){if(p.blob.size>LIB_MAX)throw libTooBig(p.blob.size);
+  return libB64(p.blob).then(function(b64){var n=Math.ceil(b64.length/LIB_PART)||1;if(n>16)throw libTooBig(p.blob.size);var chain=Promise.resolve(),done=0;
+   step('Uploading…',12);
+   if(p.thumb)chain=chain.then(function(){return libPut(key,'t',p.thumb);});
+   for(var i=0;i<n;i++)(function(i){chain=chain.then(function(){return libPut(key,i,b64.slice(i*LIB_PART,(i+1)*LIB_PART));}).then(function(){done++;step('Uploading… '+Math.round(100*done/n)+'%',12+Math.round(84*done/n));});})(i);
+   return chain.then(function(){step('Saved ✓',100);if(p.thumb){LIB.thumbs[key]=p.thumb;lput('th:'+key,p.thumb);}lput('f:'+key,{mime:p.mime,b64:b64});
+    var nm=String(file.name||'file');if(p.shrunk)nm=nm.replace(/\.[a-z0-9]{2,5}$/i,'')+'.jpg';
+    return {key:key,name:nm.slice(0,80),mime:p.mime,size:p.blob.size,parts:n,thumb:!!p.thumb};});});});}
+
+/* open a saved file: this device's copy first, otherwise piece by piece from the server */
+function libFetch(meta,step){return lget('f:'+meta.key).then(function(c){if(c&&c.b64)return c;var n=meta.parts||1,parts=[],chain=Promise.resolve();
+ for(var i=0;i<n;i++)(function(i){chain=chain.then(function(){return api('prekGetPart',[meta.key,i]);}).then(function(d){if(!d)throw 'missing';parts[i]=d;step&&step(Math.round(100*(i+1)/n));});})(i);
+ return chain.then(function(){var v={mime:meta.mime,b64:parts.join('')};lput('f:'+meta.key,v);return v;});});}
+function libBlobUrl(meta,v){if(LIB.urls[meta.key])return LIB.urls[meta.key];var bin=atob(v.b64),n=bin.length,u=new Uint8Array(n);for(var i=0;i<n;i++)u[i]=bin.charCodeAt(i);
+ var b=new Blob([u],{type:v.mime||meta.mime||'application/octet-stream'});LIB.urls[meta.key]=URL.createObjectURL(b);LIB.blobs=LIB.blobs||{};LIB.blobs[meta.key]=b;return LIB.urls[meta.key];}
+function libOpen(id){var d=DB[id];if(!d)return;var f=d.f||{};
+ if(f.type!=='file'){var u=libNormUrl(f.url);if(u){var a=document.createElement('a');a.href=u;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove();}else toast('That link looks broken. Tap ✎ to fix it.');return;}
+ var s=SM.lib,m=f.file||{},pdf=libIsPdf(f);
+ FORM={s:s,lib:1,view:1,id:id,doc:d,f:f};
+ var h='<div class="sh-h" style="'+vars(s)+'"><div class="badge">'+s.ini+'</div><h2>'+esc(f.title||m.name||'File')+'</h2><button class="x" data-act="close" aria-label="Close">×</button></div><div class="sh-b viewer" style="'+vars(s)+'">'+
+  '<div class="vwrap" id="l_view"><div class="upl"><div class="upl-m">Opening…</div><div class="upl-bar"><i></i></div></div></div>'+
+  '<div class="hint">'+esc([f.cat,(pdf?'PDF':'Picture')+' · '+libSize(m.size),m.name].filter(Boolean).join(' · '))+'</div></div>'+
+  '<div class="sh-f" style="'+vars(s)+'"><button class="btn" data-libedit="'+id+'">Edit</button><span class="grow"></span><span id="l_vbtns"></span></div>';
+ var sh=$('#sheet');sh.setAttribute('style',vars(s));sh.innerHTML=h;sh.classList.add('on');sh.setAttribute('aria-hidden','false');$('#shade').classList.add('on');document.body.style.overflow='hidden';document.body.classList.add('sheeton');
+ var form=FORM;libFetch(m,function(p){var i=$('#l_view i');if(i)i.style.width=p+'%';}).then(function(v){if(FORM!==form)return;var url=libBlobUrl(m,v),vw=$('#l_view');
+  vw.innerHTML=pdf?(window.innerWidth>700?'<iframe title="PDF preview" src="'+url+'"></iframe>':'<a class="pdfbig" href="'+url+'" target="_blank" rel="noopener"><span class="lth pdf"><span>PDF</span></span><b>Tap to open the PDF</b></a>'):'<img alt="'+esc(f.title||'')+'" src="'+url+'">';
+  var b='<a class="btn pri" href="'+url+'" target="_blank" rel="noopener" data-lopen="1">Open</a><a class="btn" href="'+url+'" download="'+esc(m.name||'file')+'">Download</a>';
+  try{var fl=new File([LIB.blobs[m.key]],m.name||'file',{type:m.mime});if(navigator.canShare&&navigator.canShare({files:[fl]})){LIB.shareFile=fl;b+='<button class="btn" data-libshare="1">Share</button>';}}catch(e){}
+  $('#l_vbtns').innerHTML=b;})
+ .catch(function(e){if(FORM!==form)return;$('#l_view').innerHTML='<div class="upl bad"><div class="upl-m">Couldn’t open that file right now. Check your internet and try again.</div></div>';console.warn('open',e);});}
+
+/* delete with Undo: the details go now; the file's pieces go a little later, once Undo has passed */
+var LSBD='prek_bindel';
+function libQueueDel(key,n){var q=[];try{q=JSON.parse(localStorage.getItem(LSBD)||'[]');}catch(e){}q.push({key:key,n:n||1,at:Date.now()+LIB_DELAY});try{localStorage.setItem(LSBD,JSON.stringify(q));}catch(e){}setTimeout(libDrain,LIB_DELAY+500);}
+var _drain=false;
+function libDrain(){if(_drain||!loaded||!K||OUT.length)return;var q=[];try{q=JSON.parse(localStorage.getItem(LSBD)||'[]');}catch(e){}if(!q.length)return;
+ var used={};for(var id in DB){var x=DB[id];if(x.sec==='lib'&&x.f&&x.f.file&&x.f.file.key)used[x.f.file.key]=1;}
+ var now=Date.now(),keep=[],go=[];q.forEach(function(o){if(used[o.key])return;if(o.at>now)keep.push(o);else go.push(o);});
+ if(!go.length){try{localStorage.setItem(LSBD,JSON.stringify(keep));}catch(e){}return;}
+ _drain=true;var o=go[0];api('prekDelFile',[o.key,o.n]).then(function(){ldel('f:'+o.key);ldel('th:'+o.key);delete LIB.thumbs[o.key];var rest=go.slice(1).concat(keep);try{localStorage.setItem(LSBD,JSON.stringify(rest));}catch(e){}_drain=false;if(go.length>1)libDrain();})
+ .catch(function(){_drain=false;});}
+setInterval(libDrain,20000);
+function libDelete(){var d=FORM.doc;if(!d)return;if(!confirm('Delete “'+(d.f.title||'this item')+'”?'))return;closeSheet();var copy=JSON.parse(JSON.stringify(d));removeDoc(d.id);
+ if(copy.f.file&&copy.f.file.key)libQueueDel(copy.f.file.key,copy.f.file.parts);toast('Deleted',function(){save(copy);});}
+
+function libClick(e,t){var el;
+ if((el=t.closest('[data-libstar]'))){e.stopPropagation();var d=DB[el.getAttribute('data-libstar')];if(!d)return true;d=JSON.parse(JSON.stringify(d));d.f.fav=!d.f.fav;save(d,true);libRefreshList();toast(d.f.fav?'Added to favorites ★':'Removed from favorites');return true;}
+ if((el=t.closest('[data-libedit]'))){e.stopPropagation();var id=el.getAttribute('data-libedit');if(FORM)closeSheet();libForm(id,{});return true;}
+ if((el=t.closest('[data-libopen]'))){libOpen(el.getAttribute('data-libopen'));return true;}
+ if((el=t.closest('[data-libcat]'))){UI.libCat=el.getAttribute('data-libcat');saveUI();render();return true;}
+ if((el=t.closest('[data-libfav]'))){UI.libFav=!UI.libFav;saveUI();render();return true;}
+ if((el=t.closest('[data-libtype]'))){libSetType(el.getAttribute('data-libtype'));return true;}
+ if((el=t.closest('[data-libnewcat]'))){var nc=$('#l_newcat');nc.hidden=false;nc.focus();$$('[data-pick=cat] button').forEach(function(b){b.classList.remove('on');});FORM.f.cat='';return true;}
+ if(t.closest('[data-pick=cat] button')){var n2=$('#l_newcat');if(n2){n2.hidden=true;n2.value='';}return false;}
+ if((el=t.closest('[data-libshare]'))){if(LIB.shareFile)navigator.share({files:[LIB.shareFile],title:FORM&&FORM.f?FORM.f.title:''}).catch(function(){});return true;}
+ return false;}
+document.addEventListener('input',function(e){if(e.target&&e.target.id==='libq'){UI.libQ=e.target.value;saveUI();libRefreshList();}});
 
 /* ---------- toast ---------- */
 var _tt=null;function toast(msg,undo){var t=$('#toast');t.innerHTML='<span>'+esc(msg)+'</span>'+(undo?'<button>Undo</button>':'');t.classList.add('on');clearTimeout(_tt);
@@ -417,6 +601,7 @@ var _tt=null;function toast(msg,undo){var t=$('#toast');t.innerHTML='<span>'+esc
 
 /* ---------- events ---------- */
 document.addEventListener('click',function(e){var t=e.target,el;
+ if(libClick(e,t))return;
  if((el=t.closest('[data-tog]'))){e.stopPropagation();var d=DB[el.getAttribute('data-tog')];if(!d)return;var s=SM[d.sec],k=s.checkKey;d=JSON.parse(JSON.stringify(d));d.f[k]=!d.f[k];if(d.f[k])d.f.doneAt=Date.now();save(d);
   if(s.id==='todo'&&d.f[k])toast('Done ✓ — moved to Done',function(){var x=JSON.parse(JSON.stringify(DB[d.id]));x.f[k]=false;save(x);});return;}
  if((el=t.closest('[data-top]'))){var i=+el.getAttribute('data-top'),dd=dashDoc();dd.f=dd.f||{};noteSave();dd=dashDoc();var tp=dd.f.top||[{},{},{}];tp[i]=tp[i]||{};tp[i].done=!tp[i].done;dd.f.top=tp;save(dd,true);
@@ -452,5 +637,5 @@ window.addEventListener('pagehide',function(){if(_tNote)noteSave();});
 /* ---------- boot ---------- */
 render();if(K)load();
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(function(){});
-window.PREK={DB:function(){return DB;},OUT:function(){return OUT;},load:load,flush:flush,save:save,removeDoc:removeDoc};
+window.PREK={lib:LIB,DB:function(){return DB;},OUT:function(){return OUT;},load:load,flush:flush,save:save,removeDoc:removeDoc};
 })();
